@@ -5,37 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiple Customizable Benchmark Graphics</title>
     <style>
-        /* Default styling for the page */
         body {
-            font-family: 'Roboto', sans-serif; /* Default font */
-            font-size: 8pt; /* Default font size */
+            font-family: 'Roboto', sans-serif;
+            font-size: 8pt;
+            margin: 0;
+            padding-top: 60px; /* Space for fixed header */
         }
 
-        /* Styling for the main container */
+        /* Styling for the fixed top navigation bar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* Style for dropdown menu links */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
         .container {
             margin: 20px;
         }
 
-        /* Styling sections within container */
-        .input-section, .slider-section, .shape-section, .color-section, .font-section {
+        .control-section, .slider-section, .shape-section, .color-section, .font-section {
             margin-bottom: 20px;
         }
 
-        /* Common style for inputs and buttons */
         .input-section input, .slider-section input, .color-section input, .shape-section select, .font-section select, .control-section button {
             margin: 5px;
             padding: 5px;
             display: inline-block;
         }
 
-        /* Style for graphic line container */
         .line-container {
             position: relative;
             height: 150px;
             width: 100%;
         }
 
-        /* Style for horizontal line */
         .horizontal-line {
             position: absolute;
             top: 50%;
@@ -45,33 +81,24 @@
             width: 100%;
         }
 
-        /* Common style for endpoint shapes */
         .diamond, .circle, .square {
             position: absolute;
             top: 50%;
             transform: translate(-50%, -50%);
             background-color: black;
-        }
-
-        /* Specific styling for diamond endpoint */
-        .diamond {
-            width: 15px; /* Width for diamond */
-            height: 15px; /* Height for diamond */
-            transform-origin: center; /* Set rotation origin to center */
-            transform: translate(-50%, -50%) rotate(45deg); /* Rotate to diamond shape */
-        }
-
-        /* Style for circular and square endpoints */
-        .circle, .square {
             width: 15px;
             height: 15px;
+        }
+
+        .diamond {
+            transform-origin: center;
+            transform: translate(-50%, -50%) rotate(45deg);
         }
 
         .circle {
             border-radius: 50%;
         }
 
-        /* Style for vertical line in graphics */
         .vertical-line {
             position: absolute;
             width: 4px;
@@ -80,7 +107,6 @@
             transform: translateY(-50%);
         }
 
-        /* Callout styling for labels */
         .callout {
             position: absolute;
             white-space: nowrap;
@@ -91,8 +117,20 @@
 </head>
 <body>
 
+<div class="navbar">
+    <div class="dropdown">
+        <span>Future Tools</span>
+        <div class="dropdown-content">
+            <a href="#">Future Tool 1</a>
+            <a href="#">Future Tool 2</a>
+            <a href="#">Future Tool 3</a>
+            <a href="#">Future Tool 4</a>
+            <a href="#">Future Tool 5</a>
+        </div>
+    </div>
+</div>
+
 <div class="container">
-    <!-- Control section for graphic options -->
     <div class="control-section">
         <label for="graphic-count">Number of Graphics: </label>
         <select id="graphic-count">
@@ -109,7 +147,6 @@
         <button onclick="generateGraphics()">Generate Graphics</button>
     </div>
 
-    <!-- Font selection section -->
     <div class="font-section">
         <label for="font-select">Select Font: </label>
         <select id="font-select" onchange="updateAllGraphics('font', this.value)">
@@ -131,7 +168,6 @@
         </select>
     </div>
 
-    <!-- Slider section for property adjustments -->
     <div class="slider-section">
         <div>
             <label for="width-slider">Graphic Width: </label>
@@ -153,7 +189,6 @@
             <input type="range" id="diamond-slider" min="10" max="30" value="20" oninput="updateAllGraphics('diamond-size', this.value)">
             <span id="diamond-value">20</span>
         </div>
-        <!-- Slider for adjusting spacing between graphics -->
         <div>
             <label for="spacing-slider">Graphics Spacing: </label>
             <input type="range" id="spacing-slider" min="0" max="50" value="10" oninput="updateSpacing(this.value)">
@@ -161,7 +196,6 @@
         </div>
     </div>
 
-    <!-- Shape section for endpoint selection -->
     <div class="shape-section">
         <label for="shape-select">Select Endpoint Shape: </label>
         <select id="shape-select" onchange="updateAllGraphics('shape', this.value)">
@@ -171,7 +205,6 @@
         </select>
     </div>
 
-    <!-- Color customization section -->
     <div class="color-section">
         <div>
             <label for="horizontal-line-color">Horizontal Line Color: </label>
@@ -191,25 +224,20 @@
         </div>
     </div>
 
-    <!-- Button to export graphic -->
     <button onclick="exportGraphics()">Export as Vector</button>
-
-    <!-- Input forms for specific graphic data -->
+    
     <div class="input-section" id="input-forms"></div>
-    <!-- Section for generated graphics -->
     <div id="graphics-container"></div>
 </div>
 
 <script>
-    // Function to generate graphics
     const generateGraphics = () => {
         const container = document.getElementById('graphics-container');
         const inputForms = document.getElementById('input-forms');
         const count = parseInt(document.getElementById('graphic-count').value);
-        container.innerHTML = ''; // Clear previous graphics
-        inputForms.innerHTML = ''; // Clear previous forms
+        container.innerHTML = '';
+        inputForms.innerHTML = '';
 
-        // Loop to create each graphic
         for (let i = 0; i < count; i++) {
             const formHTML = `
                 <div class="input-group">
@@ -239,7 +267,6 @@
         }
     };
 
-    // Function to update graphics on property change
     const updateAllGraphics = (property, value) => {
         const containers = document.querySelectorAll('.line-container');
         containers.forEach(container => {
@@ -276,7 +303,7 @@
                     lowElement.setAttribute('class', value);
                     highElement.setAttribute('class', value);
                     break;
-                case 'font': // Update font
+                case 'font':
                     container.querySelectorAll('.callout').forEach(callout => {
                         callout.style.fontFamily = value;
                     });
@@ -285,7 +312,6 @@
         });
     };
 
-    // Function to update colors
     const updateColor = (component, color) => {
         const containers = document.querySelectorAll('.line-container');
         containers.forEach(container => {
@@ -309,7 +335,6 @@
         });
     };
 
-    // Adjust spacing between graphics based on slider
     const updateSpacing = (value) => {
         const containers = document.querySelectorAll('.line-container');
         containers.forEach(container => {
@@ -318,7 +343,6 @@
         document.getElementById('spacing-value').textContent = `${value}px`;
     };
 
-    // Function to update each graphic based on input
     const updateGraphic = (index) => {
         const lowValue = parseInt(document.getElementById(`low-value-${index}`).value);
         const highValue = parseInt(document.getElementById(`high-value-${index}`).value);
@@ -353,7 +377,6 @@
         document.getElementById(`benchmark-callout-${index}`).style.top = `${calloutYPosition}px`;
     };
 
-    // Export graphics as a vector file
     const exportGraphics = () => {
         const container = document.getElementById('graphics-container');
         const svgBlob = new Blob([container.innerHTML], {type: 'image/svg+xml;charset=utf-8'});
