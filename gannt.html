@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart Tool</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding-top: 80px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .title {
+            flex: 1;
+            text-align: center;
+            font-size: 24px;
+            margin: 0 20px;
+        }
+
+        .logo {
+            max-height: 50px;
+            margin-right: 20px;
+        }
+
+        .about-button {
+            margin-left: 20px;
+            padding: 10px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .control-section {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .control-section input, .control-section button, .control-section select, .control-section textarea {
+            margin-right: 10px;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+
+        .chart-container {
+            width: 800px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            position: relative;
+            background-color: #f9f9f9;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 150px repeat(12, 1fr);
+            grid-auto-rows: 40px;
+            border-bottom: 1px solid #aaa;
+        }
+
+        .header {
+            grid-column: span 13;
+            height: 40px;
+            display: grid;
+            grid-template-columns: 150px repeat(12, 1fr);
+            align-items: center;
+            background-color: #333;
+        }
+
+        .header div {
+            text-align: center;
+            color: white;
+        }
+
+        .activity {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-left: 5px;
+            background-color: #e1e1e1;
+        }
+
+        .bar {
+            position: relative;
+            height: 30px;
+            background-color: #7f8c8d;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            padding-left: 5px;
+            color: white;
+        }
+
+        .milestone {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-left-color: inherit;
+            transform: rotate(45deg);
+            margin-left: -7px;
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <img class="logo" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEy2hSdOU_BmVd9npM278NwosPZ8bM1BcJ_w&s" alt="Logo">
+    <div class="title">Gantt Chart Tool</div>
+    <button class="about-button" onclick="showAboutInfo()">About</button>
+    <div class="dropdown">
+        <span>Future Tools</span>
+        <div class="dropdown-content">
+            <a href="#">Future Tool 1</a>
+            <a href="#">Future Tool 2</a>
+            <a href="#">Future Tool 3</a>
+            <a href="#">Future Tool 4</a>
+            <a href="#">Future Tool 5</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="control-section">
+        <textarea id="data-input" rows="10" cols="80" placeholder="Paste data here from Excel (Activity, Start, Finish, Duration)"></textarea>
+        <button onclick="generateGantt()">Generate Gantt Chart</button>
+        <input type="date" id="milestone-date" placeholder="Milestone Date">
+        <select id="activity-select"></select>
+        <input type="color" id="milestone-color" value="#ff0000">
+        <button onclick="addMilestone()">Add Milestone</button>
+        <button onclick="exportGanttPNG()">Export as PNG</button>
+    </div>
+    <div class="chart-container">
+        <div class="header" id="chart-header"></div>
+        <div class="chart-grid" id="gantt-chart"></div>
+    </div>
+</div>
+
+<canvas id="exportCanvas" style="display:none;"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+<script>
+    function parseDate(dateString) {
+        if (!dateString) return null;
+        const cleanedDate = dateString.replace(/A|\*/g, '').trim();
+        return new Date(cleanedDate);
+    }
+
+    function generateMonthHeader(startMonth) {
+        const header = document.getElementById('chart-header');
+        header.innerHTML = '<div></div>'; // Empty space for Activity names
+        for (let i = 0; i < 12; i++) {
+            const monthDate = new Date(startMonth);
+            monthDate.setMonth(monthDate.getMonth() + i);
+            const monthDiv = document.createElement('div');
+            monthDiv.innerText = monthDate.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+            header.appendChild(monthDiv);
+        }
+    }
+
+    function generateGantt() {
+        const dataInput = document.getElementById('data-input').value;
+        const activitySelect = document.getElementById('activity-select');
+        const chartGrid = document.getElementById('gantt-chart');
+        chartGrid.innerHTML = '';
+        activitySelect.innerHTML = '';
+
+        const lines = dataInput.split('\n').map(line => line.split('\t'));
+        const dates = lines.flatMap(parts => [parseDate(parts[1]), parseDate(parts[2])]).filter(date => date);
+        const minStartDate = new Date(Math.min.apply(null, dates));
+
+        generateMonthHeader(minStartDate);
+
+        lines.forEach(parts => {
+            const activity = parts[0].trim();
+            const startDate = parseDate(parts[1]);
+            const finishDate = parseDate(parts[2]);
+            const duration = parseInt(parts[3]) || 0;
+
+            if (!startDate || !finishDate) return;
+
+            const row = document.createElement('div');
+
+            const activityCell = document.createElement('div');
+            activityCell.className = 'activity';
+            activityCell.innerText = activity;
+            row.appendChild(activityCell);
+
+            const startMonthOffset = (startDate.getMonth() - minStartDate.getMonth()) + 12 * (startDate.getFullYear() - minStartDate.getFullYear());
+            const endMonthOffset = (finishDate.getMonth() - minStartDate.getMonth()) + 12 * (finishDate.getFullYear() - minStartDate.getFullYear());
+
+            for (let i = startMonthOffset; i <= endMonthOffset; i++) {
+                const barCell = document.createElement('div');
+                if (i === startMonthOffset) {
+                    const leftOffset = ((startDate - new Date(startDate.getFullYear(), startDate.getMonth())) / (1000 * 60 * 60 * 24)) * 2.5;
+                    const widthOffset = ((finishDate - startDate) / (1000 * 60 * 60 * 24)) * 2.5;
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.width = `${widthOffset}px`;
+                    bar.style.marginLeft = `${leftOffset}px`;
+                    barCell.appendChild(bar);
+                }
+                row.appendChild(barCell);
+            }
+            chartGrid.appendChild(row);
+
+            const option = document.createElement('option');
+            option.value = activity;
+            option.textContent = activity;
+            activitySelect.appendChild(option);
+        });
+    }
+
+    function addMilestone() {
+        const selectedActivity = document.getElementById('activity-select').value;
+        const milestoneDate = parseDate(document.getElementById('milestone-date').value);
+        const milestoneColor = document.getElementById('milestone-color').value;
+
+        const rows = document.querySelectorAll('#gantt-chart > div');
+        rows.forEach(row => {
+            if (row.querySelector('.activity').textContent !== selectedActivity) return;
+            
+            const startDate = parseDate(document.getElementById('data-input').value.split('\n').find(line => line.includes(selectedActivity)).split('\t')[1]);
+            const milestone = document.createElement('div');
+            milestone.className = 'milestone';
+            milestone.style.borderLeftColor = milestoneColor;
+            milestone.style.left = `${((milestoneDate - startDate) / (1000 * 60 * 60 * 24)) * 2.5}px`;
+            row.querySelector('.bar').appendChild(milestone);
+        });
+    }
+
+    function exportGanttPNG() {
+        const chartContainer = document.querySelector('.chart-container');
+        domtoimage.toBlob(chartContainer)
+            .then(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = 'gantt-chart.png';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            })
+            .catch(function(error) {
+                console.error('Error exporting image:', error);
+            });
+    }
+
+    function showAboutInfo() {
+        alert("This tool allows you to create and customize a Gantt chart from data exported from Excel. Use the controls to add milestones and tailor the chart to your project needs, exporting it as an image for use in presentations.");
+    }
+</script>
+
+</body>
+</html>
