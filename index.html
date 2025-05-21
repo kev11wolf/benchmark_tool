@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiple Customizable Benchmark Graphics</title>
+    <title>Benchmark Graphics Tool</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
             font-size: 8pt;
             margin: 0;
-            padding-top: 60px; /* Space for fixed header */
+            padding-top: 80px; /* Space for fixed header */
         }
 
         .navbar {
@@ -18,12 +18,33 @@
             width: 100%;
             background-color: #333;
             color: white;
-            padding: 10px 20px;
+            padding: 15px 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 1000;
+        }
+
+        .title {
+            flex: 1;
+            text-align: center;
+            font-size: 24px;
+            margin: 0 20px;
+        }
+
+        .logo {
+            max-height: 50px;
+            margin-right: 20px;
+        }
+
+        .about-button {
+            margin-left: 20px;
+            padding: 10px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
 
         .dropdown {
@@ -119,6 +140,9 @@
 <body>
 
 <div class="navbar">
+    <img class="logo" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEy2hSdOU_BmVd9npM278NwosPZ8bM1BcJ_w&s" alt="Logo">
+    <div class="title">Benchmark Graphics Tool</div>
+    <button class="about-button" onclick="showAboutInfo()">About</button>
     <div class="dropdown">
         <span>Future Tools</span>
         <div class="dropdown-content">
@@ -146,7 +170,7 @@
             </script>
         </select>
         <button onclick="generateGraphics()">Generate Graphics</button>
-        <button onclick="exportGraphics()">Export as Vector</button>
+        <button onclick="exportGraphics()">Export as PNG</button>
     </div>
 
     <div class="font-section">
@@ -158,12 +182,12 @@
 
     <div class="slider-section">
         <label for="width-slider">Width:</label>
-        <input type="range" id="width-slider" min="10" max="100" value="100" oninput="updateAllGraphics('width', this.value)">
-        <span id="width-value">100%</span>
+        <input type="range" id="width-slider" min="0" max="100" value="0" oninput="updateAllGraphics('width', this.value)">
+        <span id="width-value">0%</span>
 
         <label for="height-slider">Line Height:</label>
-        <input type="range" id="height-slider" min="10" max="100" value="50" oninput="updateAllGraphics('height', this.value)">
-        <span id="height-value">50%</span>
+        <input type="range" id="height-slider" min="10" max="100" value="15" oninput="updateAllGraphics('height', this.value)">
+        <span id="height-value">15%</span>
 
         <label for="font-slider">Font Size:</label>
         <input type="range" id="font-slider" min="6" max="16" value="8" oninput="updateAllGraphics('font-size', this.value)">
@@ -174,8 +198,8 @@
         <span id="diamond-value">20</span>
 
         <label for="spacing-slider">Spacing:</label>
-        <input type="range" id="spacing-slider" min="0" max="50" value="10" oninput="updateSpacing(this.value)">
-        <span id="spacing-value">10px</span>
+        <input type="range" id="spacing-slider" min="0" max="50" value="0" oninput="updateSpacing(this.value)">
+        <span id="spacing-value">0px</span>
     </div>
 
     <div class="shape-section">
@@ -202,8 +226,16 @@
     </div>
 
     <div class="input-section" id="input-forms"></div>
-    <div id="graphics-container"></div>
+    <div id="graphics-container">
+    <!-- Example graphic -->
+    <svg id="graphic-svg" xmlns="http://www.w3.org/2000/svg" width="300" height="150" style="display:none;">
+        <rect x="10" y="10" width="280" height="130" stroke="black" fill="none" stroke-width="2" />
+        <!-- Dynamic content to be added here -->
+    </svg>
+    </div>
 </div>
+
+<canvas id="exportCanvas" style="display:none;"></canvas>
 
 <script>
     const generateGraphics = () => {
@@ -354,22 +386,39 @@
 
     const exportGraphics = () => {
         const container = document.getElementById('graphics-container');
-        const svgElement = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="${container.offsetWidth}" height="${container.offsetHeight}">
-                <foreignObject width="100%" height="100%">
-                    ${container.innerHTML}
-                </foreignObject>
-            </svg>
-        `;
-        const svgBlob = new Blob([svgElement], {type: 'image/svg+xml;charset=utf-8'});
-        const downloadLink = document.createElement('a');
-        const url = URL.createObjectURL(svgBlob);
-        downloadLink.href = url;
-        downloadLink.download = 'graphics.svg';
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        const canvas = document.getElementById('exportCanvas');
+        const context = canvas.getContext('2d');
+
+        // Adjust the canvas size based on container
+        const containerRect = container.getBoundingClientRect();
+        canvas.width = containerRect.width;
+        canvas.height = containerRect.height;
+
+        // Clear the canvas
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Use dom-to-image.js or similar library here (assumed integration)
+        domtoimage.toBlob(container)
+            .then(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = 'graphics.png';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            })
+            .catch(function(error) {
+                console.error('Error exporting image:', error);
+            });
+    };
+
+    const showAboutInfo = () => {
+        alert("This tool allows you to generate and customize benchmark graphics with adjustable attributes such as size, color, and shape. Use the controls to tailor graphics to your needs and export them as images for use in presentations.");
     };
 </script>
+
+<!-- Include dom-to-image library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
 </body>
 </html>
