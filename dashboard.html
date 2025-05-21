@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Customizable Benchmark Graphics</title>
+    <style>
+        /* Default styling for the page */
+        body {
+            font-family: 'Roboto', sans-serif; /* Default font */
+            font-size: 8pt; /* Default font size */
+        }
+
+        /* Styling for the main container */
+        .container {
+            margin: 20px;
+        }
+
+        /* Styling sections within container */
+        .input-section, .slider-section, .shape-section, .color-section, .font-section {
+            margin-bottom: 20px;
+        }
+
+        /* Common style for inputs and buttons */
+        .input-section input, .slider-section input, .color-section input, .shape-section select, .font-section select, .control-section button {
+            margin: 5px;
+            padding: 5px;
+            display: inline-block;
+        }
+
+        /* Style for graphic line container */
+        .line-container {
+            position: relative;
+            height: 150px;
+            width: 100%;
+        }
+
+        /* Style for horizontal line */
+        .horizontal-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            border-bottom: 2px solid black;
+            transform: translateY(-50%);
+            width: 100%;
+        }
+
+        /* Common style for endpoint shapes */
+        .diamond, .circle, .square {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: black;
+        }
+
+        /* Specific styling for diamond endpoint */
+        .diamond {
+            width: 15px; /* Width for diamond */
+            height: 15px; /* Height for diamond */
+            transform-origin: center; /* Set rotation origin to center */
+            transform: translate(-50%, -50%) rotate(45deg); /* Rotate to diamond shape */
+        }
+
+        /* Style for circular and square endpoints */
+        .circle, .square {
+            width: 15px;
+            height: 15px;
+        }
+
+        .circle {
+            border-radius: 50%;
+        }
+
+        /* Style for vertical line in graphics */
+        .vertical-line {
+            position: absolute;
+            width: 4px;
+            background-color: red;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Callout styling for labels */
+        .callout {
+            position: absolute;
+            white-space: nowrap;
+            font-size: inherit;
+            transform: translate(-50%, 0);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Control section for graphic options -->
+    <div class="control-section">
+        <label for="graphic-count">Number of Graphics: </label>
+        <select id="graphic-count">
+            <script>
+                const selectElement = document.getElementById('graphic-count');
+                for (let i = 1; i <= 50; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.innerText = i;
+                    selectElement.appendChild(option);
+                }
+            </script>
+        </select>
+        <button onclick="generateGraphics()">Generate Graphics</button>
+    </div>
+
+    <!-- Font selection section -->
+    <div class="font-section">
+        <label for="font-select">Select Font: </label>
+        <select id="font-select" onchange="updateAllGraphics('font', this.value)">
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Brush Script MT">Brush Script MT</option>
+            <option value="Monaco">Monaco</option>
+            <option value="Lucida Console">Lucida Console</option>
+            <option value="Garamond">Garamond</option>
+            <option value="Palatino">Palatino</option>
+            <option value="Impact">Impact</option>
+            <option value="Comic Sans MS">Comic Sans MS</option>
+            <option value="Copperplate">Copperplate</option>
+        </select>
+    </div>
+
+    <!-- Slider section for property adjustments -->
+    <div class="slider-section">
+        <div>
+            <label for="width-slider">Graphic Width: </label>
+            <input type="range" id="width-slider" min="10" max="100" value="100" oninput="updateAllGraphics('width', this.value)">
+            <span id="width-value">100%</span>
+        </div>
+        <div>
+            <label for="height-slider">Benchmark Line Height: </label>
+            <input type="range" id="height-slider" min="10" max="100" value="50" oninput="updateAllGraphics('height', this.value)">
+            <span id="height-value">50%</span>
+        </div>
+        <div>
+            <label for="font-slider">Font Size: </label>
+            <input type="range" id="font-slider" min="6" max="16" value="8" oninput="updateAllGraphics('font-size', this.value)">
+            <span id="font-value">8pt</span>
+        </div>
+        <div>
+            <label for="diamond-slider">Diamond Size: </label>
+            <input type="range" id="diamond-slider" min="10" max="30" value="20" oninput="updateAllGraphics('diamond-size', this.value)">
+            <span id="diamond-value">20</span>
+        </div>
+        <!-- Slider for adjusting spacing between graphics -->
+        <div>
+            <label for="spacing-slider">Graphics Spacing: </label>
+            <input type="range" id="spacing-slider" min="0" max="50" value="10" oninput="updateSpacing(this.value)">
+            <span id="spacing-value">10px</span>
+        </div>
+    </div>
+
+    <!-- Shape section for endpoint selection -->
+    <div class="shape-section">
+        <label for="shape-select">Select Endpoint Shape: </label>
+        <select id="shape-select" onchange="updateAllGraphics('shape', this.value)">
+            <option value="diamond">Diamond</option>
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+        </select>
+    </div>
+
+    <!-- Color customization section -->
+    <div class="color-section">
+        <div>
+            <label for="horizontal-line-color">Horizontal Line Color: </label>
+            <input type="color" id="horizontal-line-color" value="#000000" oninput="updateColor('horizontal-line', this.value)">
+        </div>
+        <div>
+            <label for="endpoint-color">Endpoint Color: </label>
+            <input type="color" id="endpoint-color" value="#000000" oninput="updateColor('endpoint', this.value)">
+        </div>
+        <div>
+            <label for="vertical-line-color">Vertical Line Color: </label>
+            <input type="color" id="vertical-line-color" value="#ff0000" oninput="updateColor('vertical-line', this.value)">
+        </div>
+        <div>
+            <label for="callout-color">Callout Color: </label>
+            <input type="color" id="callout-color" value="#000000" oninput="updateColor('callout', this.value)">
+        </div>
+    </div>
+
+    <!-- Button to export graphic -->
+    <button onclick="exportGraphics()">Export as Vector</button>
+
+    <!-- Input forms for specific graphic data -->
+    <div class="input-section" id="input-forms"></div>
+    <!-- Section for generated graphics -->
+    <div id="graphics-container"></div>
+</div>
+
+<script>
+    // Function to generate graphics
+    const generateGraphics = () => {
+        const container = document.getElementById('graphics-container');
+        const inputForms = document.getElementById('input-forms');
+        const count = parseInt(document.getElementById('graphic-count').value);
+        container.innerHTML = ''; // Clear previous graphics
+        inputForms.innerHTML = ''; // Clear previous forms
+
+        // Loop to create each graphic
+        for (let i = 0; i < count; i++) {
+            const formHTML = `
+                <div class="input-group">
+                    <label for="low-value-${i}">Low Value for Graphic ${i + 1}: </label>
+                    <input type="number" id="low-value-${i}" value="10" oninput="updateGraphic(${i})">
+                    <label for="high-value-${i}">High Value for Graphic ${i + 1}: </label>
+                    <input type="number" id="high-value-${i}" value="100" oninput="updateGraphic(${i})">
+                    <label for="benchmark-value-${i}">Benchmark for Graphic ${i + 1}: </label>
+                    <input type="number" id="benchmark-value-${i}" value="55" oninput="updateGraphic(${i})">
+                </div>
+            `;
+            inputForms.innerHTML += formHTML;
+
+            const graphicHTML = `
+                <div class="line-container" data-index="${i}" style="margin-bottom: 10px;">
+                    <div class="horizontal-line"></div>
+                    <div class="diamond" id="low-diamond-${i}"></div>
+                    <div class="diamond" id="high-diamond-${i}"></div>
+                    <div class="vertical-line" id="benchmark-line-${i}"></div>
+                    <div id="low-callout-${i}" class="callout"></div>
+                    <div id="high-callout-${i}" class="callout"></div>
+                    <div id="benchmark-callout-${i}" class="callout"></div>
+                </div>
+            `;
+            container.innerHTML += graphicHTML;
+            updateGraphic(i);
+        }
+    };
+
+    // Function to update graphics on property change
+    const updateAllGraphics = (property, value) => {
+        const containers = document.querySelectorAll('.line-container');
+        containers.forEach(container => {
+            switch(property) {
+                case 'width':
+                    container.style.width = `${value}%`;
+                    document.getElementById('width-value').textContent = `${value}%`;
+                    updateGraphic(container.dataset.index);
+                    break;
+                case 'height':
+                    const benchmarkLine = container.querySelector('.vertical-line');
+                    benchmarkLine.style.height = `${value}%`;
+                    benchmarkLine.style.top = '50%';
+                    document.getElementById('height-value').textContent = `${value}%`;
+                    updateGraphic(container.dataset.index);
+                    break;
+                case 'font-size':
+                    container.querySelectorAll('.callout').forEach(callout => {
+                        callout.style.fontSize = `${value}pt`;
+                    });
+                    document.getElementById('font-value').textContent = `${value}pt`;
+                    break;
+                case 'diamond-size':
+                    container.querySelectorAll('.diamond, .circle, .square').forEach(element => {
+                        element.style.width = `${value}px`;
+                        element.style.height = `${value}px`;
+                    });
+                    document.getElementById('diamond-value').textContent = `${value}`;
+                    updateGraphic(container.dataset.index);
+                    break;
+                case 'shape':
+                    const lowElement = container.querySelector(`#low-diamond-${container.dataset.index}`);
+                    const highElement = container.querySelector(`#high-diamond-${container.dataset.index}`);
+                    lowElement.setAttribute('class', value);
+                    highElement.setAttribute('class', value);
+                    break;
+                case 'font': // Update font
+                    container.querySelectorAll('.callout').forEach(callout => {
+                        callout.style.fontFamily = value;
+                    });
+                    break;
+            }
+        });
+    };
+
+    // Function to update colors
+    const updateColor = (component, color) => {
+        const containers = document.querySelectorAll('.line-container');
+        containers.forEach(container => {
+            switch(component) {
+                case 'horizontal-line':
+                    container.querySelector('.horizontal-line').style.borderBottomColor = color;
+                    break;
+                case 'endpoint':
+                    container.querySelector(`#low-diamond-${container.dataset.index}`).style.backgroundColor = color;
+                    container.querySelector(`#high-diamond-${container.dataset.index}`).style.backgroundColor = color;
+                    break;
+                case 'vertical-line':
+                    container.querySelector('.vertical-line').style.backgroundColor = color;
+                    break;
+                case 'callout':
+                    container.querySelectorAll('.callout').forEach(callout => {
+                        callout.style.color = color;
+                    });
+                    break;
+            }
+        });
+    };
+
+    // Adjust spacing between graphics based on slider
+    const updateSpacing = (value) => {
+        const containers = document.querySelectorAll('.line-container');
+        containers.forEach(container => {
+            container.style.marginBottom = `${value}px`;
+        });
+        document.getElementById('spacing-value').textContent = `${value}px`;
+    };
+
+    // Function to update each graphic based on input
+    const updateGraphic = (index) => {
+        const lowValue = parseInt(document.getElementById(`low-value-${index}`).value);
+        const highValue = parseInt(document.getElementById(`high-value-${index}`).value);
+        const benchmarkValue = parseInt(document.getElementById(`benchmark-value-${index}`).value);
+
+        const horizontalLine = document.querySelector(`.line-container[data-index='${index}'] .horizontal-line`);
+        const lineWidth = horizontalLine.offsetWidth;
+        const lowPosition = 0;
+        const highPosition = lineWidth;
+        const benchmarkPosition = ((benchmarkValue - lowValue) / (highValue - lowValue)) * lineWidth;
+
+        document.getElementById(`low-diamond-${index}`).style.left = `${lowPosition}px`;
+        document.getElementById(`high-diamond-${index}`).style.left = `${highPosition}px`;
+        document.getElementById(`benchmark-line-${index}`).style.left = `${benchmarkPosition}px`;
+
+        const benchmarkLine = document.getElementById(`benchmark-line-${index}`);
+        const calloutYPosition = benchmarkLine.offsetTop - benchmarkLine.offsetHeight - 10;
+
+        document.getElementById(`low-callout-${index}`).textContent = `Low: ${lowValue}`;
+        document.getElementById(`high-callout-${index}`).textContent = `High: ${highValue}`;
+        document.getElementById(`benchmark-callout-${index}`).textContent = `NN M3: ${benchmarkValue}`;
+
+        const diamondHeight = document.getElementById(`low-diamond-${index}`).offsetHeight;
+
+        document.getElementById(`low-callout-${index}`).style.left = `${lowPosition}px`;
+        document.getElementById(`low-callout-${index}`).style.top = `${horizontalLine.offsetTop + diamondHeight}px`;
+
+        document.getElementById(`high-callout-${index}`).style.left = `${highPosition}px`;
+        document.getElementById(`high-callout-${index}`).style.top = `${horizontalLine.offsetTop + diamondHeight}px`;
+        
+        document.getElementById(`benchmark-callout-${index}`).style.left = `${benchmarkPosition}px`;
+        document.getElementById(`benchmark-callout-${index}`).style.top = `${calloutYPosition}px`;
+    };
+
+    // Export graphics as a vector file
+    const exportGraphics = () => {
+        const container = document.getElementById('graphics-container');
+        const svgBlob = new Blob([container.innerHTML], {type: 'image/svg+xml;charset=utf-8'});
+        
+        const downloadLink = document.createElement('a');
+        const url = URL.createObjectURL(svgBlob);
+        downloadLink.href = url;
+        downloadLink.download = 'graphics.svg';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    };
+</script>
+</body>
+</html>
